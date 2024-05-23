@@ -3,9 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
+
 	"io"
+
+	"github.com/gin-gonic/gin"
+
 	"log"
+
 	"net/http"
 	os "os"
 )
@@ -116,6 +120,19 @@ func main() {
 	config := loadConfig()
 
 	router := gin.Default()
+
+	//var keycloakurl string = "http://localhost/realms/ecommerce/protocol/openid-connect/certs"
+
+	keycloakurl := os.Getenv("jwt_token_rsa_url")
+
+	var rsakey, err = GetJWKSet(keycloakurl)
+	if err != nil {
+		fmt.Println("Error lodaing RSA Public Key from env var : jwt_token_rsa_url ")
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	router.Use(JWTMiddleware(rsakey))
+
 	router.GET("/albums", getAlbums)
 
 	for _, i := range config.Redirect {

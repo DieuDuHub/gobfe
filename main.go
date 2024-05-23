@@ -48,7 +48,12 @@ func getAlbums(c *gin.Context) {
 }
 
 func getRedirect(c *gin.Context, destination string) {
-	response, err := http.Get(destination)
+
+	localNginx := os.Getenv("local_nginx")
+
+	dest := "http://" + localNginx + destination
+
+	response, err := http.Get(dest)
 
 	if err != nil {
 		fmt.Print(err.Error())
@@ -74,7 +79,10 @@ type Configuration struct {
 }
 
 func loadConfig() Configuration {
-	response, err := http.Get("http://localhost/config/rustmo/default/main/gobfe.json")
+
+	configserver := os.Getenv("config_server_url")
+
+	response, err := http.Get("http://" + configserver)
 
 	if err != nil {
 		fmt.Print(err.Error())
@@ -137,11 +145,11 @@ func main() {
 
 	for _, i := range config.Redirect {
 		fmt.Println(i.Url)
-		router.GET(i.Name, func(c *gin.Context) {
+		router.GET("bfe/"+i.Name, func(c *gin.Context) {
 			getRedirect(c, i.Url)
 		})
 	}
 
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:8082")
 
 }

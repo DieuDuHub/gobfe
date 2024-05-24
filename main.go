@@ -70,8 +70,9 @@ func getRedirect(c *gin.Context, destination string) {
 }
 
 type Redirect struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name   string `json:"name"`
+	Url    string `json:"url"`
+	Secure bool   `json:"secure"`
 }
 
 type Configuration struct {
@@ -139,15 +140,22 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	router.Use(JWTMiddleware(rsakey))
+	//router.Use(JWTMiddleware(rsakey))
 
 	router.GET("/albums", getAlbums)
 
 	for _, i := range config.Redirect {
 		fmt.Println(i.Url)
-		router.GET("bfe/"+i.Name, func(c *gin.Context) {
-			getRedirect(c, i.Url)
-		})
+
+		if i.Secure {
+			router.GET("bfe/"+i.Name, JWTMiddleware(rsakey), func(c *gin.Context) {
+				getRedirect(c, i.Url)
+			})
+		} else {
+			router.GET("bfe/"+i.Name, func(c *gin.Context) {
+				getRedirect(c, i.Url)
+			})
+		}
 	}
 
 	router.Run("0.0.0.0:8082")
